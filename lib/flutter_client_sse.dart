@@ -3,26 +3,28 @@ library flutter_client_sse;
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
 part 'sse_event_model.dart';
 
 class SSEClient {
-  static http.Client _client = new http.Client();
-  static StreamController<SSEModel> _streamController = new StreamController();
+  final http.Client _client;
+  final StreamController<SSEModel> _streamController;
+
+  SSEClient()
+      : _streamController = new StreamController(),
+        _client = new http.Client();
 
   ///def: Subscribes to SSE
   ///param:
   ///[url]->URl of the SSE api
   ///[header]->Map<String,String>, key value pair of the request header
-  static Stream<SSEModel> subscribeToSSE(
-      {required String url, required Map<String, String> header}) {
+  Stream<SSEModel> subscribeToSSE({required String url, required Map<String, String> header}) {
     var lineRegex = RegExp(r'^([^:]*)(?::)?(?: )?(.*)?$');
     var currentSSEModel = SSEModel(data: '', id: '', event: '');
     // ignore: close_sinks
-    _streamController = new StreamController();
     print("--SUBSCRIBING TO SSE---");
     while (true) {
       try {
-        _client = http.Client();
         var request = new http.Request("GET", Uri.parse(url));
 
         ///Adding headers to the request
@@ -66,8 +68,7 @@ class SSEClient {
                     currentSSEModel.event = value;
                     break;
                   case 'data':
-                    currentSSEModel.data =
-                        (currentSSEModel.data ?? '') + value + '\n';
+                    currentSSEModel.data = (currentSSEModel.data ?? '') + value + '\n';
                     break;
                   case 'id':
                     currentSSEModel.id = value;
@@ -77,6 +78,11 @@ class SSEClient {
                 }
               },
               onError: (e, s) {
+                if (e.toString() == 'Connection closed while receiving data') {
+                  print('---WARNING---');
+                  print('Connection closed while receiving data');
+                  return;
+                }
                 print('---ERROR---');
                 print(e);
                 _streamController.addError(e, s);
@@ -98,10 +104,11 @@ class SSEClient {
     }
   }
 
-  static void unsubscribeFromSSE() {
-    // close the stream
+  void unsubscribeFromSSE() {
+    // close streamController
     _streamController.close();
-    // close the http client
+    // close http client
     _client.close();
+    print("--UNSUBSCRIBED FROM SSE---");
   }
 }

@@ -3,12 +3,19 @@ library flutter_client_sse;
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 part 'sse_event_model.dart';
 
 class SSEClient {
   final http.Client _client;
   final StreamController<SSEModel> _streamController;
+
+  static final logger = Logger(
+    printer: PrettyPrinter(
+        methodCount: 0,
+    ),
+  );
 
   SSEClient()
       : _streamController = new StreamController(),
@@ -22,7 +29,7 @@ class SSEClient {
     var lineRegex = RegExp(r'^([^:]*)(?::)?(?: )?(.*)?$');
     var currentSSEModel = SSEModel(data: '', id: '', event: '');
     // ignore: close_sinks
-    print("--SUBSCRIBING TO SSE---");
+    logger.i("--SUBSCRIBING TO SSE---");
     while (true) {
       try {
         var request = new http.Request("GET", Uri.parse(url));
@@ -79,23 +86,19 @@ class SSEClient {
               },
               onError: (e, s) {
                 if (e.toString() == 'Connection closed while receiving data') {
-                  print('---WARNING---');
-                  print('Connection closed while receiving data');
+                  logger.w("Connection closed while receiving data");
                   return;
                 }
-                print('---ERROR---');
-                print(e);
+                logger.e(e, s);
                 _streamController.addError(e, s);
               },
             );
         }, onError: (e, s) {
-          print('---ERROR---');
-          print(e);
+          logger.e(e, s);
           _streamController.addError(e, s);
         });
       } catch (e, s) {
-        print('---ERROR---');
-        print(e);
+        logger.e(e, s);
         _streamController.addError(e, s);
       }
 
@@ -109,6 +112,6 @@ class SSEClient {
     _streamController.close();
     // close http client
     _client.close();
-    print("--UNSUBSCRIBED FROM SSE---");
+    logger.i("--UNSUBSCRIBED FROM SSE---");
   }
 }

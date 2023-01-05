@@ -13,7 +13,7 @@ class SSEClient {
 
   static final logger = Logger(
     printer: PrettyPrinter(
-        methodCount: 0,
+      methodCount: 0,
     ),
   );
 

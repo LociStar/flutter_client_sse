@@ -89,16 +89,16 @@ class SSEClient {
                   logger.w("Connection closed while receiving data");
                   return;
                 }
-                logger.e(e, s);
+                logger.e("Error inside data stream", e, s);
                 _streamController.addError(e, s);
               },
             );
         }, onError: (e, s) {
-          logger.e(e, s);
+          logger.e("Error inside response stream", e, s);
           _streamController.addError(e, s);
         });
       } catch (e, s) {
-        logger.e(e, s);
+        logger.e("Error", e, s);
         _streamController.addError(e, s);
       }
 
